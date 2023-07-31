@@ -95,16 +95,20 @@ docker-compose up -d
 
 5.- Clone the file
 
-````
+```
 .env.template
-``` and rename the copy to
-````
+```
+
+and rename the copy to
+
+```
 
 .env
 
 ```
 
 6.- Llenar las variables de entorno definidas en el
+
 ```
 
 .env
@@ -133,4 +137,7 @@ http://localhost:3000/api/v1/seed
 - MongoDB
 - Nest.js
 - Docker
+
+```
+
 ```
