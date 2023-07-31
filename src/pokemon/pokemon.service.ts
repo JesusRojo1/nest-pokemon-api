@@ -4,16 +4,26 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { CreatePokemonDto, UpdatePokemonDto } from './dto';
-import { Pokemon, PokemonSchema } from './entities/pokemon.entity';
+import { Pokemon } from './entities/pokemon.entity';
 import { Model, isValidObjectId } from 'mongoose';
 import { InjectModel } from '@nestjs/mongoose';
+import { PokeResponse } from 'src/seed/interfaces/pokemon-result.intarface';
+import { PaginationDto } from '../common/dto/pagination.dto';
+import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class PokemonService {
+  private limitQuery;
   constructor(
     @InjectModel(Pokemon.name)
     private readonly pokemonModel: Model<Pokemon>,
-  ) {}
+    private readonly configService: ConfigService,
+  ) {
+    this.limitQuery = configService.get<number>('defaultLimitQuery');
+    console.log(this.limitQuery);
+  }
+
+  private getPokemonResponse: PokeResponse[] = [];
 
   async create(createPokemonDto: CreatePokemonDto) {
     try {
@@ -26,13 +36,22 @@ export class PokemonService {
     }
   }
 
-  async findAll() {
-    const pokemon = await this.pokemonModel.find();
+  async findAll(PaginationDto: PaginationDto) {
+    console.log(+this.limitQuery);
+    const { limit = +this.limitQuery, offset = 0 } = PaginationDto;
+    const pokemon = await this.pokemonModel
+      .find()
+      .limit(limit)
+      .skip(offset)
+      .sort({
+        pokemon_number: 1,
+      })
+      .select('-__v');
     return pokemon;
   }
 
   async findOne(query: string) {
-    let pokemon = Pokemon;
+    let pokemon: Pokemon;
 
     //Validate value insert endpoint
     if (!isNaN(+query)) {
@@ -78,16 +97,6 @@ export class PokemonService {
   }
 
   async remove(id: string) {
-    // const pokemon = await this.findOne(id);
-    // const pokemonDelete = await this.pokemonModel.deleteOne();
-
-    // if (!pokemonDelete)
-    //   throw new NotFoundException(
-    //     `Pokemon with id, name or number pokemon ${id} not found`,
-    //   );
-
-    //const result = await this.pokemonModel.findByIdAndDelete(id);
-
     const { deletedCount } = await this.pokemonModel.deleteOne({ _id: id });
     if (deletedCount === 0)
       throw new BadRequestException(
